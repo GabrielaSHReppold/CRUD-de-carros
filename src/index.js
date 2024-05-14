@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import bcrypt from 'bcrypt'
 
 const app = express()
 
@@ -9,6 +10,8 @@ app.use(express.json())
 
 let listaDeVeiculos = []
 let proximoId = 1
+let usuarios = []
+let proximoUsuario = 1
 
 app.post('/veiculos',(request,response)=>{
    const modelo = request.body.modelo
@@ -67,32 +70,150 @@ app.get('/veiculos',(request,response)=>{
 })
 
 app.get('/veiculosBuscar', (request, response) => {
-    const marcaFiltrada = request.query.marca
-    const verificarMarca = listaDeVeiculos.find(marca => marca.marca === marcaFiltrada)
+    const marcaFiltrada = request.query.marca;
 
+    const veiculosFiltrados = listaDeVeiculos.filter(veiculo => veiculo.marca === marcaFiltrada);
 
-    if (verificarMarca) {
-        response.status(200).send(listaDeVeiculos)
+    if (veiculosFiltrados.length > 0) {
+        response.status(200).send(veiculosFiltrados);
     } else {
-        response.status(404).send('Não há veículos cadastrados desta marca.') 
+        response.status(404).send('Não há veículos cadastrados desta marca.');
     }
-
 })
 
 
 
+//-------------------------4.ATUALIZAR------------------------------------------ 
 
+//http://localhost:3333/veiculos/:idBuscado
+app.put("/veiculos/:idBuscado", (request, response) => {
+    const modelo = request.body.modelo
+    const marca = request.body.marca
+    const ano = request.body.ano
+    const cor = request.body.cor
+    const preco = request.body.preco
 
+    const idBuscado = Number(request.params.idBuscado)
 
+    if (!idBuscado) {
+        response.status(400).send(JSON.stringify({ Mensagem: "Favor enviar um ID válido" }))
+    }
 
+    const idVerificado = listaDeVeiculos.findIndex((veiculo) => veiculo.id === idBuscado)
 
+    if (idVerificado === -1) {
+        response.status(400).send(JSON.stringify({ Mensagem: "Veículo não encontrado. O usuário deve voltar para o menu inicial." }))
+    }
 
+    if (idVerificado !== -1){
+        const carro = listaDeVeiculos[idVerificado]
+        carro.cor = cor
+        carro.preco = preco
 
+        
 
+        response.status(200).send(JSON.stringify({ Mensagem: `Veículo ${carro.modelo} (${carro.marca} ${carro.ano}) atualizado com sucesso.` }));
 
+    }
+})
 
+//-------------------------5 - Crie um Endpoint Remover veículo----------------
 
+//http://localhost:3333/veiculos/:idBuscado
 
+app.delete('/veiculos/:idBuscado', (request, response) => {
+    const idBuscado = Number(request.params.idBuscado)
+
+    if(!idBuscado){
+        return response.status(400).send(JSON.stringify({ Mensagem: "Veículo, não encontrado. O usuário deve voltar para o menu inicial depois" }))
+    }
+
+    const identificadorVeiculos = listaDeVeiculos.findIndex(veiculo =>(veiculo.id === idBuscado)) 
+ 
+
+    if(identificadorVeiculos === -1){
+         response.status(400).send(JSON.stringify({ Mensagem: "Identificador de veículos não encontrado" }))
+    }else{
+        listaDeVeiculos.splice(identificadorVeiculos,1)
+        response.status(200).send(JSON.stringify({ Mensagem: "Veículo deletado com sucesso" }))
+    }
+})
+
+//-------------------------6 - Crie um Endpoint Criar uma pessoa usuária-------
+
+app.post('/signup', async (request, response)=>{
+
+    const data = request.body
+    const nome = data.nome
+    const email = data.email
+    const senhaDigitada = data.senhaDigitada
+    
+    if(!nome){
+        response.status(400).send(JSON.stringify({ Mensagem: "Favor enviar um nome válido" }))
+    }
+
+    if(!email){
+        response.status(400).send(JSON.stringify({ Mensagem: "Favor enviar um email válido" }))
+    }
+
+    if(!senhaDigitada){
+        response.status(400).send(JSON.stringify({ Mensagem: "Favor enviar uma senha válido" }))
+    }
+
+    const verificarEmail = usuarios.find(usuario=> usuario.email === email)
+    
+    if(verificarEmail){
+        response.status(400).send(JSON, stringify({Mensagem: `Email já cadastrado no nosso banco de dados.`}))
+    }
+
+    const senhaCriptografada = await bcrypt.hash(senhaDigitada, 10)
+
+    let usuario = {
+    
+        id : proximoUsuario, 
+        nome : request.body.nome,
+        email : request.body.email,
+        senhaDigitada : senhaCriptografada
+    }
+
+    usuarios.push(usuario)
+
+    proximoUsuario++
+
+    response.status(201).send(JSON.stringify({Mensagem: `Pessoa de email ${email}, cadastrada com sucesso.`}))
+})
+
+//-------------------------7 - Crie um Endpoint logar uma pessoa usuária-------
+
+app.post('/login',async(request,response)=>{
+    const data = request.body 
+  
+    const email = data.email 
+    const senhaDigitada = data.senha
+  
+    if(!email){
+      response.status(400).send(JSON.stringify({ Mensagem: "Favor inserir um email válido" }))
+    }
+  
+    if(!senhaDigitada){
+      response.status(400).send(JSON.stringify({ Mensagem: "Favor inserir uma senha válida" }))
+    }
+  
+    const usuario = usuarios.find(usuario =>usuario.email === email)
+
+    console.log(senhaDigitada)
+    console.log(usuario)
+  
+    const senhaMatch = await bcrypt.compare(senhaDigitada,usuario.senhaDigitada)
+
+    console.log(senhaMatch)
+  
+    if(!senhaMatch){
+      response.status(400).send(JSON.stringify({ Mensagem: "Senha não encontrada em nosso banco.Credencial inválida" }))
+    }
+  
+    response.status(200).send(JSON.stringify({ Mensagem: `Pessoa com email ${email}, foi logada com sucesso! Seja Bem-vinde!` }))
+})
 
 
 

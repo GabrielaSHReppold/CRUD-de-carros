@@ -1,0 +1,56 @@
+
+
+
+
+-> Se o veículo existir, o sistema deve permitir que o usuário
+atualize somente a cor e o preço.
+
+                             atualizar 
+
+http://localhost:3333/veiculos/:idBuscado
+app.put('/veiculos/:idBuscado', (resquisição, resposta) =>{
+    const data = request.body
+
+    const modelo = data.modelo
+    const marca = data.marca
+    const ano = Number(data.ano)
+    const cor = data.cor
+    const preco = Number(data.preco)
+    })
+
+
+
+    const idBuscado = Number(data.params.idBuscado)
+
+    if (!idBuscado) {
+      response.status(400).send(JSON.stringify({ "Veículo, não encontrado. O usuário deve voltar para o menu
+        inicial depois" }))   
+    }
+
+    const idVerificado = veiculos.findIndex((veiculo) => veiculo.id ===idBuscado)
+
+    if (idVerificado === -1){
+        response.status(400).send(JSON,stringify({"Veículo não encontrado"}))
+    }
+
+    if (!modelo){
+        response.status(400).send(JSON,stringify({"Modelo de carro não encontrado"}))
+    }
+
+    if (!marca){
+        response.status(400).send(JSON,stringify({"Marca de carro não encontrado"}))
+    }
+
+    if (!ano){
+        response.status(400).send(JSON,stringify({"Ano do carro não encontrado"}))
+    }
+
+    if (!cor){
+        response.status(400).send(JSON,stringify({"Cor do carro não encontrado"}))
+    }
+
+    if (!preco){
+        response.status(400).send(JSON,stringify({"Preço do carro não encontrado"}))
+    }
+
+    
